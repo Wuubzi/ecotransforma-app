@@ -1,75 +1,244 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
-
-import { HelloWave } from '@/components/HelloWave';
-import ParallaxScrollView from '@/components/ParallaxScrollView';
-import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
+/* eslint-disable react-hooks/exhaustive-deps */
+import Depositos from "@/components/Depositos";
+import ScreenView from "@/components/Screen";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { LinearGradient } from "expo-linear-gradient";
+import { Link, useFocusEffect, useRouter } from "expo-router";
+import {
+  CircleQuestionMarkIcon,
+  MapPin,
+  Moon,
+  Recycle,
+  Sun,
+} from "lucide-react-native";
+import { useColorScheme } from "nativewind";
+import React, { useCallback, useEffect, useState } from "react";
+import {
+  Linking,
+  Pressable,
+  RefreshControl,
+  ScrollView,
+  Text,
+  View,
+} from "react-native";
+import { showLocation } from "react-native-map-link";
 
 export default function HomeScreen() {
+  const { colorScheme, toggleColorScheme } = useColorScheme();
+  const isDarkMode = colorScheme === "dark";
+  const [name, setName] = useState("");
+  const [points, setPoints] = useState(0);
+  const [refreshing, setRefreshing] = useState(false);
+  const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
+  const [idUser, setIdUser] = useState<string | null>(null);
+  const router = useRouter();
+
+  useFocusEffect(
+    useCallback(() => {
+      if (idUser) {
+        fetchUserData();
+      }
+    }, [idUser])
+  );
+
+  useEffect(() => {
+    const loadUserId = async () => {
+      try {
+        const storedId = await AsyncStorage.getItem("id_user");
+        if (storedId) {
+          setIdUser(storedId);
+        }
+      } catch (error) {
+        console.error("Error leyendo AsyncStorage:", error);
+      }
+    };
+
+    loadUserId();
+  }, []);
+  const mostrarUbicacion = () => {
+    showLocation({
+      latitude: "10.94333541656095",
+      longitude: "-74.7836217286596",
+      title: "Sena Centro de aviacion",
+      dialogTitle: "Abrir con",
+      dialogMessage: "Elige una aplicacion",
+      cancelText: "Cancelar",
+      appsWhiteList: ["google-maps", "waze"],
+    });
+  };
+  const abrirWhatsapp = () => {
+    const numero = "573243471012";
+    const mensaje = "Hola, Estoy interesado en reciclar";
+    const url = `https://wa.me/${numero}?text=${encodeURIComponent(mensaje)}`;
+
+    Linking.openURL(url).catch(() =>
+      alert("Parece que WhatsApp no está instalado en este dispositivo.")
+    );
+  };
+  const fetchUserData = async (): Promise<{ name: string; points: number }> => {
+    try {
+      const respuesta = await fetch(
+        `http://192.168.1.11:3000/users/get-user?id_user=${idUser}`,
+        {
+          method: "GET",
+        }
+      );
+
+      const data = await respuesta.json();
+      const nombre = data.name;
+
+      if (respuesta.ok) {
+        setName(nombre.split(" ")[0]);
+        setPoints(data.points);
+        return {
+          name: nombre.split(" ")[0],
+          points: data?.points,
+        };
+      }
+    } catch (error) {}
+    return { name: "", points: 0 };
+  };
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      const userData = await fetchUserData();
+      setName(userData.name);
+      setPoints(userData.points);
+      setLastUpdate(new Date());
+    } catch (error) {
+      console.error("Error al actualizar datos:", error);
+    } finally {
+      setRefreshing(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      const isLogged = await AsyncStorage.getItem("isLogged");
+      if (!isLogged) {
+        router.replace("/login");
+      }
+    };
+    checkAuth();
+  }, [router]);
+
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12',
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-        <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+    <ScreenView className="flex-1 bg-backgroundWhite dark:bg-backgroundDark">
+      <ScrollView
+        className="flex-1"
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={["#10B981", "#059669"]}
+            tintColor={isDarkMode ? "#10B981" : "#059669"}
+            title="Actualizando datos..."
+            titleColor={isDarkMode ? "#ffffff" : "#000000"}
+            progressBackgroundColor={isDarkMode ? "#1f2937" : "#ffffff"}
+          />
+        }
+        showsVerticalScrollIndicator={false}
+      >
+        {/*Header  */}
+        <View className="flex-row items-center justify-between p-4">
+          <View>
+            <Text className="text-2xl text-black dark:color-white">
+              Hey! {name}
+            </Text>
+          </View>
+          <View className="p-2 border-2 border-gray-300 rounded-xl dark:border-gray-600 dark:color-white">
+            <Pressable onPress={toggleColorScheme}>
+              {isDarkMode ? (
+                <Sun size={24} color="#fff" />
+              ) : (
+                <Moon size={24} color="#000" />
+              )}
+            </Pressable>
+          </View>
+        </View>
+
+        {/* Points Cards */}
+        <LinearGradient
+          colors={isDarkMode ? ["#d2f5c0", "#6ec28d"] : ["#0d1f14", "#124a2c"]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={{
+            borderRadius: 16,
+            margin: 16,
+            paddingVertical: 12,
+          }}
+        >
+          {/* Points Cards Header*/}
+          <View className="flex-row items-center gap-3 p-6">
+            <Text className="text-xl font-semibold text-white dark:text-black">
+              Puntos Obtenidos
+            </Text>
+            <CircleQuestionMarkIcon
+              size={24}
+              color={isDarkMode ? "#000" : "#fff"}
+            />
+          </View>
+
+          {/* Points Cards Content */}
+          <View className="flex-row items-center justify-between p-4">
+            <View className="flex-row items-center gap-2">
+              <Text className="text-4xl font-bold text-white dark:text-black">
+                {points}
+              </Text>
+              <Text className="text-xl text-white dark:text-black">Puntos</Text>
+            </View>
+
+            <Link href={"/(tabs)/ofertas"} asChild>
+              <Pressable className="border border-gray-500 px-5 py-3 rounded-full">
+                <Text className="text-lg font-bold text-white dark:text-black">
+                  Canjear
+                </Text>
+              </Pressable>
+            </Link>
+          </View>
+        </LinearGradient>
+
+        {/* Actions Cards */}
+        <View className="flex-row items-center justify-around py-2 px-4 gap-4">
+          <Pressable
+            onPress={mostrarUbicacion}
+            className="flex-col gap-4 bg-white rounded-xl shadow-md flex items-center p-6 dark:bg-[#010100] dark:shadow-gray-800"
+          >
+            <View className="p-4 border border-gray-300 rounded-xl">
+              <MapPin color={isDarkMode ? "#fff" : "#000"} />
+            </View>
+            <Text className="text-md font-semibold font-outfitMedium dark:text-white">
+              Entregar Reciclaje
+            </Text>
+          </Pressable>
+          <Pressable
+            onPress={abrirWhatsapp}
+            className="flex-col gap-4 bg-white rounded-xl shadow-md flex items-center p-6 dark:bg-[#010100] dark:shadow-gray-800"
+          >
+            <View className="p-4 border border-gray-300 rounded-xl">
+              <Recycle color={isDarkMode ? "#fff" : "#000"} />
+            </View>
+            <Text className="text-md font-semibold font-outfitMedium dark:text-white">
+              ¿Como Reciclar?
+            </Text>
+          </Pressable>
+        </View>
+
+        {/* Footer */}
+        <View>
+          <Text className="text-2xl font-bold font-outfitMedium p-5 dark:text-white">
+            Ultimos Depositos
+          </Text>
+          <Depositos />
+        </View>
+
+        <Pressable className="bg-[#010100] m-6 p-4 rounded-xl items-center justify-center dark:bg-white">
+          <Text className="text-white text-xl font-outfitMedium dark:text-black">
+            Registrar Entrega
+          </Text>
+        </Pressable>
+      </ScrollView>
+    </ScreenView>
   );
 }
-
-const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
-  },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
-  },
-});
