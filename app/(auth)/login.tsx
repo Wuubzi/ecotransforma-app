@@ -15,6 +15,7 @@ import {
 import { Toast } from "toastify-react-native";
 
 export default function Login() {
+  const apiUrl = process.env.EXPO_PUBLIC_API_URL;
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -47,7 +48,7 @@ export default function Login() {
     if (!validate()) return;
 
     try {
-      const respuesta = await fetch(`http://192.168.1.11:3000/auth/login`, {
+      const respuesta = await fetch(`${apiUrl}/auth/login`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

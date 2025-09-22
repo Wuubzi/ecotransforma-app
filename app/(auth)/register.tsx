@@ -1,3 +1,4 @@
+
 import ScreenView from "@/components/Screen";
 import { Link, useRouter } from "expo-router";
 import { useState } from "react";
@@ -14,6 +15,7 @@ import {
 import { Toast } from "toastify-react-native";
 
 export default function Register() {
+  const apiUrl = process.env.EXPO_PUBLIC_API_URL;
   const router = useRouter();
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
@@ -67,7 +69,7 @@ export default function Register() {
   const register = async () => {
     if (!validateRegisterForm()) return;
     try {
-      const respuesta = await fetch(`http://192.168.1.11:3000/auth/register`, {
+      const respuesta = await fetch(`${apiUrl}/auth/register`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

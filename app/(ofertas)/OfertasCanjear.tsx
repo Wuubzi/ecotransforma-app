@@ -25,6 +25,7 @@ type UserDetail = {
 };
 
 export default function OfertasCanjear() {
+  const apiUrl = process.env.EXPO_PUBLIC_API_URL;
   const { id_offer } = useLocalSearchParams();
   const router = useRouter();
   const [oferta, setOferta] = useState<OfferDetail | null>(null);
@@ -46,7 +47,7 @@ export default function OfertasCanjear() {
     loadUserId();
 
     if (id_offer) {
-      fetch(`http://192.168.1.11:3000/offers/get-offer?id_offer=${id_offer}`)
+      fetch(`${apiUrl}/offers/get-offer?id_offer=${id_offer}`)
         .then((res) => res.json())
         .then((data) => setOferta(data))
         .catch((err) => console.error(err));
@@ -55,7 +56,7 @@ export default function OfertasCanjear() {
 
   useEffect(() => {
     if (!idUser) return; // No ejecuta si no hay idUser
-    fetch(`http://192.168.1.11:3000/users/get-user?id_user=${idUser}`)
+    fetch(`${apiUrl}/users/get-user?id_user=${idUser}`)
       .then((res) => res.json())
       .then((data) => setUser(data))
       .catch((err) => console.error(err));
@@ -65,7 +66,7 @@ export default function OfertasCanjear() {
   const redeem = async () => {
     try {
       const respueta = await fetch(
-        `http://192.168.1.11:3000/offers/redeem-offer?id_offer=${id_offer}&id_user=${User.id_user}`,
+        `${apiUrl}/offers/redeem-offer?id_offer=${id_offer}&id_user=${User.id_user}`,
         {
           method: "PUT",
         }

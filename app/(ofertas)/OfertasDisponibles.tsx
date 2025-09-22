@@ -14,6 +14,7 @@ type OfferDetail = {
 };
 
 export default function OfertasComponent() {
+  const apiUrl = process.env.EXPO_PUBLIC_API_URL; 
   const router = useRouter();
   const { id_offer } = useLocalSearchParams();
   const [oferta, setOferta] = useState<OfferDetail | null>(null);
@@ -24,7 +25,7 @@ export default function OfertasComponent() {
       setIdUser(value);
     });
     if (id_offer) {
-      fetch(`http://192.168.1.11:3000/offers/get-offer?id_offer=${id_offer}`)
+      fetch(`${apiUrl}/offers/get-offer?id_offer=${id_offer}`)
         .then((res) => res.json())
         .then((data) => setOferta(data))
         .catch((err) => console.error(err));
@@ -32,9 +33,10 @@ export default function OfertasComponent() {
   }, [id_offer]);
 
   const redeem = async () => {
+    
     try {
       const respuesta = await fetch(
-        `http://192.168.1.11:3000/users/get-user?id_user=${idUser}`,
+        `${apiUrl}/users/get-user?id_user=${idUser}`,
         {
           method: "GET",
         }

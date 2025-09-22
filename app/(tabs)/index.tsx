@@ -24,13 +24,14 @@ import {
 import { showLocation } from "react-native-map-link";
 
 export default function HomeScreen() {
+  const apiUrl = process.env.EXPO_PUBLIC_API_URL;
   const { colorScheme, toggleColorScheme } = useColorScheme();
   const isDarkMode = colorScheme === "dark";
   const [name, setName] = useState("");
   const [points, setPoints] = useState(0);
   const [refreshing, setRefreshing] = useState(false);
   const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
-  const [idUser, setIdUser] = useState<string | null>(null);
+  const [idUser, setIdUser] = useState<number | null>(null);
   const router = useRouter();
 
   useFocusEffect(
@@ -46,7 +47,8 @@ export default function HomeScreen() {
       try {
         const storedId = await AsyncStorage.getItem("id_user");
         if (storedId) {
-          setIdUser(storedId);
+
+        setIdUser(parseInt(storedId));
         }
       } catch (error) {
         console.error("Error leyendo AsyncStorage:", error);
@@ -75,10 +77,22 @@ export default function HomeScreen() {
       alert("Parece que WhatsApp no está instalado en este dispositivo.")
     );
   };
+
+   const registrarEntrega = () => {
+    const numero = "573243471012";
+    const mensaje = "Hola, Quiero solicitar una recogida de reciclaje a mi domicilio/comunidad";
+    const url = `https://wa.me/${numero}?text=${encodeURIComponent(mensaje)}`;
+
+    Linking.openURL(url).catch(() =>
+      alert("Parece que WhatsApp no está instalado en este dispositivo.")
+    );
+  };
+
+
   const fetchUserData = async (): Promise<{ name: string; points: number }> => {
     try {
       const respuesta = await fetch(
-        `http://192.168.1.11:3000/users/get-user?id_user=${idUser}`,
+        `${apiUrl}/users/get-user?id_user=${idUser}`,
         {
           method: "GET",
         }
@@ -102,9 +116,11 @@ export default function HomeScreen() {
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
     try {
+    if (idUser !== null) {
       const userData = await fetchUserData();
       setName(userData.name);
       setPoints(userData.points);
+    }
       setLastUpdate(new Date());
     } catch (error) {
       console.error("Error al actualizar datos:", error);
@@ -230,10 +246,16 @@ export default function HomeScreen() {
           <Text className="text-2xl font-bold font-outfitMedium p-5 dark:text-white">
             Ultimos Depositos
           </Text>
-          <Depositos />
+          <View>
+            <View className="max-h-40 overflow-scroll">
+                <Depositos refreshKey={lastUpdate} />
+            </View>
+          </View>
         </View>
 
-        <Pressable className="bg-[#010100] m-6 p-4 rounded-xl items-center justify-center dark:bg-white">
+        <Pressable
+         onPress={registrarEntrega}
+        className="bg-[#010100] m-6 p-4 rounded-xl items-center justify-center dark:bg-white">
           <Text className="text-white text-xl font-outfitMedium dark:text-black">
             Registrar Entrega
           </Text>

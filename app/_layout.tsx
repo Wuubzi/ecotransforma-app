@@ -66,6 +66,11 @@ function AppContainer() {
           name="(auth)/send-email"
           options={{ headerTransparent: true, headerTitle: "" }}
         />
+        <Stack.Screen
+          name="details-deposit"
+          options={{  headerTitle: "Detalles del Depósito" }}
+        />
+
       </Stack>
     </View>
   );
